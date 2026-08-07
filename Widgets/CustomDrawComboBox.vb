@@ -124,7 +124,8 @@ Namespace Widgets
             Try
                 CanFocus = True
                 Events = EventMask.ButtonPressMask Or EventMask.ButtonReleaseMask Or
-                         EventMask.EnterNotifyMask Or EventMask.LeaveNotifyMask
+                         EventMask.EnterNotifyMask Or EventMask.LeaveNotifyMask Or
+                         EventMask.PointerMotionMask
 
                 SetSizeRequest(-1, MIN_HEIGHT)
 
@@ -132,6 +133,7 @@ Namespace Widgets
                 AddHandler Me.ButtonPressEvent, AddressOf OnButtonPress
                 AddHandler Me.EnterNotifyEvent, AddressOf OnEnterNotify
                 AddHandler Me.LeaveNotifyEvent, AddressOf OnLeaveNotify
+                AddHandler Me.MotionNotifyEvent, AddressOf OnMotionNotify
 
             Catch ex As Exception
                 Console.WriteLine($"CustomDrawComboBox.New error: {ex.Message}")
@@ -349,6 +351,19 @@ Namespace Widgets
                 vArgs.RetVal = True
             Catch ex As Exception
                 Console.WriteLine($"CustomDrawComboBox.OnButtonPress error: {ex.Message}")
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Marks pointer motion over this combo box as handled - see CustomDrawButton's
+        ''' identical fix for why this exists (an unclaimed click-and-drag would otherwise
+        ''' bubble up and be interpreted by the window manager as dragging the window)
+        ''' </summary>
+        Private Sub OnMotionNotify(vSender As Object, vArgs As MotionNotifyEventArgs)
+            Try
+                vArgs.RetVal = True
+            Catch ex As Exception
+                Console.WriteLine($"CustomDrawComboBox.OnMotionNotify error: {ex.Message}")
             End Try
         End Sub
 

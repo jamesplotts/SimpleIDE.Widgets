@@ -193,6 +193,7 @@ Namespace Widgets
                 AddHandler Me.ButtonReleaseEvent, AddressOf OnButtonRelease
                 AddHandler Me.EnterNotifyEvent, AddressOf OnEnterNotify
                 AddHandler Me.LeaveNotifyEvent, AddressOf OnLeaveNotify
+                AddHandler Me.MotionNotifyEvent, AddressOf OnMotionNotify
 
             Catch ex As Exception
                 Console.WriteLine($"CustomDrawButton.New error: {ex.Message}")
@@ -468,6 +469,20 @@ Namespace Widgets
                 vArgs.RetVal = True
             Catch ex As Exception
                 Console.WriteLine($"CustomDrawButton.OnButtonRelease error: {ex.Message}")
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Marks pointer motion over this button as handled - PointerMotionMask was already
+        ''' requested (above) but nothing ever consumed the resulting events, which let an
+        ''' unclaimed click-and-drag on any button bubble all the way up and be interpreted
+        ''' by the window manager as dragging the window itself, like a titlebar
+        ''' </summary>
+        Private Sub OnMotionNotify(vSender As Object, vArgs As MotionNotifyEventArgs)
+            Try
+                vArgs.RetVal = True
+            Catch ex As Exception
+                Console.WriteLine($"CustomDrawButton.OnMotionNotify error: {ex.Message}")
             End Try
         End Sub
 
