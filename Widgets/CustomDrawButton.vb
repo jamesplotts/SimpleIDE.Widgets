@@ -69,6 +69,7 @@ Namespace Widgets
 
         Protected pFillColor As String = "#C0C0C0"
         Protected pTextColor As String = "#000000"
+        Protected pDisabledTextColor As String = "#808080"
         Protected pLightEdgeColor As String = "#FFFFFF"
         Protected pDarkEdgeColor As String = "#000000"
 
@@ -266,6 +267,7 @@ Namespace Widgets
                 pBackgroundIsDark = vTheme.IsDarkTheme
                 pFillColor = vTheme.LineNumberBackgroundColor
                 pTextColor = vTheme.ForegroundColor
+                pDisabledTextColor = vTheme.GetColor(EditorTheme.Tags.eDisabledForegroundColor)
 
                 ' Bevel edges: use the theme's explicit override if set, otherwise derive
                 ' relative to the face color (lightened/darkened by a fixed amount) rather
@@ -398,7 +400,7 @@ Namespace Widgets
                 End If
 
                 If Not String.IsNullOrEmpty(pLabel) Then
-                    SetSourceColor(vContext, If(Sensitive, pTextColor, LightenColor(pTextColor, 0.4)))
+                    SetSourceColor(vContext, If(Sensitive, pTextColor, pDisabledTextColor))
                     vContext.SelectFontFace("Sans", FontSlant.Normal, FontWeight.Normal)
                     vContext.SetFontSize(11)
                     Dim lExtents As TextExtents = vContext.TextExtents(pLabel)
@@ -423,7 +425,7 @@ Namespace Widgets
         ''' </summary>
         Private Sub DrawDropdownArrow(vContext As Context, vWidth As Integer, vHeight As Integer, vContentOffset As Integer)
             Try
-                SetSourceColor(vContext, If(Sensitive, pTextColor, LightenColor(pTextColor, 0.4)))
+                SetSourceColor(vContext, If(Sensitive, pTextColor, pDisabledTextColor))
 
                 Dim lArrowCenterX As Double = vWidth - (DROPDOWN_ARROW_AREA_WIDTH / 2.0) + vContentOffset
                 Dim lArrowCenterY As Double = vHeight / 2.0 + vContentOffset

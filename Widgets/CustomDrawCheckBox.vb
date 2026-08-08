@@ -41,6 +41,7 @@ Namespace Widgets
 
         Private pFillColor As String = "#C0C0C0"
         Private pTextColor As String = "#000000"
+        Private pDisabledTextColor As String = "#808080"
         Private pLightEdgeColor As String = "#FFFFFF"
         Private pDarkEdgeColor As String = "#000000"
         Private pFlatFillColor As String = "#1E1E1E"
@@ -167,6 +168,7 @@ Namespace Widgets
 
                 pFillColor = lTheme.LineNumberBackgroundColor
                 pTextColor = lTheme.ForegroundColor
+                pDisabledTextColor = lTheme.GetColor(EditorTheme.Tags.eDisabledForegroundColor)
 
                 pLightEdgeColor = If(String.IsNullOrEmpty(lTheme.BevelLightColor), LightenColor(pFillColor, 0.30), lTheme.BevelLightColor)
                 pDarkEdgeColor = If(String.IsNullOrEmpty(lTheme.BevelDarkColor), DarkenColor(pFillColor, 0.30), lTheme.BevelDarkColor)
@@ -206,7 +208,7 @@ Namespace Widgets
 
                 ' Label
                 If Not String.IsNullOrEmpty(pLabel) Then
-                    SetSourceColor(vContext, If(Sensitive, pTextColor, LightenColor(pTextColor, 0.4)))
+                    SetSourceColor(vContext, If(Sensitive, pTextColor, pDisabledTextColor))
                     vContext.SelectFontFace("Sans", FontSlant.Normal, FontWeight.Normal)
                     vContext.SetFontSize(11)
                     Dim lExtents As TextExtents = vContext.TextExtents(pLabel)

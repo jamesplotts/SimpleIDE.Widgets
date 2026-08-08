@@ -50,6 +50,7 @@ Namespace Widgets
 
         Private pFillColor As String = "#FFFFFF"
         Private pTextColor As String = "#000000"
+        Private pDisabledTextColor As String = "#808080"
         Private pTopLeftColor As String = "#808080"      ' dark edge (sunken look)
         Private pBottomRightColor As String = "#FFFFFF"  ' light edge (sunken look)
         Private pFlatFillColor As String = "#1E1E1E"
@@ -218,6 +219,7 @@ Namespace Widgets
 
                 pFillColor = lTheme.BackgroundColor
                 pTextColor = lTheme.ForegroundColor
+                pDisabledTextColor = lTheme.GetColor(EditorTheme.Tags.eDisabledForegroundColor)
 
                 pTopLeftColor = If(String.IsNullOrEmpty(lTheme.BevelDarkColor), DarkenColor(pFillColor, 0.30), lTheme.BevelDarkColor)
                 pBottomRightColor = If(String.IsNullOrEmpty(lTheme.BevelLightColor), LightenColor(pFillColor, 0.30), lTheme.BevelLightColor)
@@ -315,7 +317,7 @@ Namespace Widgets
         ''' dropdown arrow indicator in a reserved area on the right
         ''' </summary>
         Private Sub DrawTextAndArrow(vContext As Context, vWidth As Integer, vHeight As Integer, vColor As String)
-            SetSourceColor(vContext, If(Sensitive, vColor, LightenColor(vColor, 0.4)))
+            SetSourceColor(vContext, If(Sensitive, vColor, pDisabledTextColor))
             vContext.SelectFontFace("Sans", FontSlant.Normal, FontWeight.Normal)
             vContext.SetFontSize(11)
 

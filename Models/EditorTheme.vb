@@ -67,7 +67,23 @@ Namespace Models
         ''' custom/user-created themes that don't set it
         ''' </summary>
         Public Property BevelDarkColor As String
-        
+
+        ''' <summary>
+        ''' Foreground (text) color for disabled/insensitive CustomDraw* controls
+        ''' (CustomDrawButton, CustomDrawCheckBox, CustomDrawComboBox, CustomDrawTextBox,
+        ''' CustomDrawScrollbar). Every built-in theme sets this explicitly - hand-picked by
+        ''' blending that theme's ForegroundColor 45% toward its BackgroundColor, so it reads
+        ''' as reduced-contrast/"grayed out" against that specific theme's face regardless of
+        ''' whether the theme is light or dark. This replaced an earlier approach where each
+        ''' widget independently lightened its normal text color toward white by a flat
+        ''' amount - correct for light themes, but backwards for dark ones (disabled text
+        ''' ended up brighter/higher-contrast than enabled text, e.g. Solarized Dark's
+        ''' #839496 enabled vs. a computed #E9FAFC disabled). Empty still falls back to the
+        ''' same blend-toward-background formula computed live, purely for custom/user-created
+        ''' themes that don't set it.
+        ''' </summary>
+        Public Property DisabledForegroundColor As String
+
         ' Syntax colors
         Public Property SyntaxColors As New Dictionary(Of SyntaxColorSet.Tags, String)
         
@@ -100,6 +116,7 @@ Namespace Models
             eAccentColor
             eBevelLightColor
             eBevelDarkColor
+            eDisabledForegroundColor
 
             eKeywordText
             eTypeText
@@ -149,6 +166,7 @@ Namespace Models
             AccentColor = "#007ACC"            ' VS Code blue accent
             BevelLightColor = "#6A6A6A"        ' Explicit - see BevelLightColor doc comment
             BevelDarkColor = "#000000"         ' Explicit - see BevelDarkColor doc comment
+            DisabledForegroundColor = "#9A9A9A" ' Explicit - see DisabledForegroundColor doc comment
 
             
             ' Status colors
@@ -232,6 +250,7 @@ Namespace Models
             lNewTheme.AccentColor = AccentColor
             lNewTheme.BevelLightColor = BevelLightColor
             lNewTheme.BevelDarkColor = BevelDarkColor
+            lNewTheme.DisabledForegroundColor = DisabledForegroundColor
 
             ' Copy status colors
             lNewTheme.ErrorColor = ErrorColor
@@ -282,6 +301,7 @@ Namespace Models
             lVSCodeTheme.CursorColor = "#AEAFAD"
             lVSCodeTheme.BevelLightColor = "#6A6A6A"
             lVSCodeTheme.BevelDarkColor = "#000000"
+            lVSCodeTheme.DisabledForegroundColor = "#828282"
             lVSCodeTheme.ErrorColor = "#F48771"
             lVSCodeTheme.WarningColor = "#CCA700"
             lVSCodeTheme.InfoColor = "#75BEFF"
@@ -311,6 +331,7 @@ Namespace Models
             ' darker off-white instead of the formula's degenerate result
             lLightTheme.BevelLightColor = "#F0F0F0"
             lLightTheme.BevelDarkColor = "#B2B2B2"
+            lLightTheme.DisabledForegroundColor = "#737373"
             lLightTheme.ErrorColor = "#D32F2F"
             lLightTheme.WarningColor = "#F57C00"
             lLightTheme.InfoColor = "#1976D2"
@@ -358,6 +379,8 @@ Namespace Models
                         Return BevelLightColor
                     Case EditorTheme.Tags.eBevelDarkColor
                         Return BevelDarkColor
+                    Case EditorTheme.Tags.eDisabledForegroundColor
+                        Return If(String.IsNullOrEmpty(DisabledForegroundColor), DeriveDisabledForegroundColor(), DisabledForegroundColor)
 
                     Case EditorTheme.Tags.eKeywordText
                         Return SyntaxColors(SyntaxColorSet.Tags.eKeyword)
@@ -415,6 +438,8 @@ Namespace Models
                         Return HexToCairoColor(If(String.IsNullOrEmpty(BevelLightColor), "#F0F0F0", BevelLightColor))
                     Case EditorTheme.Tags.eBevelDarkColor
                         Return HexToCairoColor(If(String.IsNullOrEmpty(BevelDarkColor), "#808080", BevelDarkColor))
+                    Case EditorTheme.Tags.eDisabledForegroundColor
+                        Return HexToCairoColor(If(String.IsNullOrEmpty(DisabledForegroundColor), DeriveDisabledForegroundColor(), DisabledForegroundColor))
 
                    Case EditorTheme.Tags.eKeywordText
                        Return HexToCairoColor(SyntaxColors(SyntaxColorSet.Tags.eKeyword))
@@ -438,6 +463,38 @@ Namespace Models
            End Get
         End Property
     
+        ''' <summary>
+        ''' Fallback for DisabledForegroundColor when a theme (typically a custom/user-created
+        ''' one) leaves it blank: blends ForegroundColor 45% toward BackgroundColor. Moving
+        ''' toward the background reduces contrast in the correct direction on both light and
+        ''' dark themes, unlike a flat "lighten toward white" formula (see
+        ''' DisabledForegroundColor's doc comment for why that was wrong).
+        ''' </summary>
+        Private Function DeriveDisabledForegroundColor() As String
+            Return BlendHexColors(ForegroundColor, BackgroundColor, 0.45)
+        End Function
+
+        Private Shared Function BlendHexColors(vColor1 As String, vColor2 As String, vRatio As Double) As String
+            Try
+                Dim lHex1 As String = vColor1.TrimStart("#"c)
+                Dim lHex2 As String = vColor2.TrimStart("#"c)
+                Dim lR1 As Integer = Convert.ToInt32(lHex1.Substring(0, 2), 16)
+                Dim lG1 As Integer = Convert.ToInt32(lHex1.Substring(2, 2), 16)
+                Dim lB1 As Integer = Convert.ToInt32(lHex1.Substring(4, 2), 16)
+                Dim lR2 As Integer = Convert.ToInt32(lHex2.Substring(0, 2), 16)
+                Dim lG2 As Integer = Convert.ToInt32(lHex2.Substring(2, 2), 16)
+                Dim lB2 As Integer = Convert.ToInt32(lHex2.Substring(4, 2), 16)
+
+                Dim lR As Integer = CInt(lR1 + (lR2 - lR1) * vRatio)
+                Dim lG As Integer = CInt(lG1 + (lG2 - lG1) * vRatio)
+                Dim lB As Integer = CInt(lB1 + (lB2 - lB1) * vRatio)
+
+                Return $"#{lR:X2}{lG:X2}{lB:X2}"
+            Catch ex As Exception
+                Return vColor1
+            End Try
+        End Function
+
         Private Function HexToCairoColor(hex As String) As Cairo.Color
             ' Remove the '#' prefix
             hex = hex.TrimStart("#"c)
@@ -483,6 +540,8 @@ Namespace Models
                         Return InfoColor
                     Case EditorTheme.Tags.eSuccessColor
                         Return SuccessColor
+                    Case EditorTheme.Tags.eDisabledForegroundColor
+                        Return If(String.IsNullOrEmpty(DisabledForegroundColor), DeriveDisabledForegroundColor(), DisabledForegroundColor)
                     Case EditorTheme.Tags.eKeywordText
                         If SyntaxColors.ContainsKey(SyntaxColorSet.Tags.eKeyword) Then
                             Return SyntaxColors(SyntaxColorSet.Tags.eKeyword)
