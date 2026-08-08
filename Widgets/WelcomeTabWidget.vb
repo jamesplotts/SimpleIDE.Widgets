@@ -126,6 +126,7 @@ Namespace Widgets
                 pThemeManager = value
                 If pThemeManager IsNot Nothing Then
                     AddHandler pThemeManager.ThemeChanged, AddressOf OnThemeManagerThemeChanged
+                    UpdateTheme(pThemeManager.GetCurrentThemeObject())
                 End If
                 pNewProjectButton.ThemeManager = value
                 pOpenProjectButton.ThemeManager = value
@@ -252,12 +253,85 @@ Namespace Widgets
         ''' immediately rather than waiting for whatever next redraws the tab
         ''' </summary>
         Private Sub OnThemeManagerThemeChanged(vTheme As EditorTheme)
-            If vTheme Is Nothing Then Return
-            UpdateTheme(vTheme.IsDarkTheme)
+            UpdateTheme(vTheme)
         End Sub
 
         ''' <summary>
-        ''' Updates the theme colors for the welcome tab
+        ''' Updates the welcome tab's chrome to match a specific EditorTheme's actual colors
+        ''' (background/foreground/accent), rather than a generic dark-or-light palette. Two
+        ''' themes of the same brightness (e.g. Solarized Dark vs. Dracula) now render
+        ''' visibly differently, matching what the rest of the IDE already does.
+        ''' </summary>
+        ''' <param name="vTheme">The theme to render with; falls back to the generic dark
+        ''' palette (via the Boolean overload) if Nothing</param>
+        Public Sub UpdateTheme(vTheme As EditorTheme)
+            If vTheme Is Nothing Then
+                UpdateTheme(True)
+                Return
+            End If
+
+            Try
+                Dim lBackground As Cairo.Color = HexToColor(vTheme.StringColor(EditorTheme.Tags.eBackgroundColor))
+                Dim lForeground As Cairo.Color = HexToColor(vTheme.StringColor(EditorTheme.Tags.eForegroundColor))
+                Dim lAccent As Cairo.Color = HexToColor(vTheme.StringColor(EditorTheme.Tags.eAccentColor))
+                Dim lFace As Cairo.Color = HexToColor(If(String.IsNullOrEmpty(vTheme.LineNumberBackgroundColor), vTheme.BackgroundColor, vTheme.LineNumberBackgroundColor))
+
+                pThemeColors.Background = lBackground
+                ' Heading uses the theme's foreground at full strength; body text is blended
+                ' partway toward the background so headings still read as more prominent -
+                ' same relationship the old hardcoded dark/light palettes had (pure white/black
+                ' headings vs. slightly softer 0.9/0.2 body text), just theme-driven now
+                pThemeColors.Heading = lForeground
+                pThemeColors.Text = BlendColors(lForeground, lBackground, 0.15)
+
+                pThemeColors.Accent = lAccent
+                pThemeColors.Link = lAccent
+                ' Hover states blend toward the foreground color rather than a hardcoded
+                ' white/black - this converges toward light on dark themes and toward dark on
+                ' light themes without needing to branch on IsDarkTheme, and increases
+                ' contrast against the background either way (the actual visual effect the
+                ' old hardcoded values were going for)
+                pThemeColors.LinkHover = BlendColors(lAccent, lForeground, 0.35)
+
+                pThemeColors.Button = lFace
+                pThemeColors.ButtonHover = BlendColors(lFace, lForeground, 0.15)
+                pThemeColors.ButtonPressed = BlendColors(lFace, lBackground, 0.25)
+                pThemeColors.ButtonText = lForeground
+
+                ' Separator: blended halfway between background and foreground, then drawn at
+                ' partial alpha (see OnDraw/DrawScrollbar) for a subtle line on any theme
+                pThemeColors.Separator = BlendColors(lBackground, lForeground, 0.35)
+
+                QueueDraw()
+
+            Catch ex As Exception
+                Console.WriteLine($"WelcomeTabWidget.UpdateTheme(EditorTheme) error: {ex.Message}")
+                UpdateTheme(vTheme.IsDarkTheme)
+            End Try
+        End Sub
+
+        Private Shared Function HexToColor(vHex As String) As Cairo.Color
+            Dim lHex As String = vHex.TrimStart("#"c)
+            Dim lR As Double = Convert.ToInt32(lHex.Substring(0, 2), 16) / 255.0
+            Dim lG As Double = Convert.ToInt32(lHex.Substring(2, 2), 16) / 255.0
+            Dim lB As Double = Convert.ToInt32(lHex.Substring(4, 2), 16) / 255.0
+            Return New Cairo.Color(lR, lG, lB)
+        End Function
+
+        Private Shared Function BlendColors(vColor1 As Cairo.Color, vColor2 As Cairo.Color, vRatio As Double) As Cairo.Color
+            Return New Cairo.Color(
+                vColor1.R + (vColor2.R - vColor1.R) * vRatio,
+                vColor1.G + (vColor2.G - vColor1.G) * vRatio,
+                vColor1.B + (vColor2.B - vColor1.B) * vRatio)
+        End Function
+
+        ''' <summary>
+        ''' Updates the theme colors for the welcome tab using a generic dark-or-light
+        ''' palette - kept as the fallback for before any real ThemeManager/EditorTheme is
+        ''' attached (see InitializeThemeColors) and for when UpdateTheme(EditorTheme) is
+        ''' given Nothing. Prefer the EditorTheme overload wherever an actual theme is
+        ''' available, since this one can't distinguish between two themes of the same
+        ''' brightness.
         ''' </summary>
         ''' <param name="vIsDarkTheme">True if using dark theme</param>
         Public Sub UpdateTheme(vIsDarkTheme As Boolean)
