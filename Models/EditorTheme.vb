@@ -302,6 +302,7 @@ Namespace Models
             lVSCodeTheme.BevelLightColor = "#6A6A6A"
             lVSCodeTheme.BevelDarkColor = "#000000"
             lVSCodeTheme.DisabledForegroundColor = "#828282"
+            lVSCodeTheme.AccentColor = "#007ACC" ' VS Code's actual brand blue
             lVSCodeTheme.ErrorColor = "#F48771"
             lVSCodeTheme.WarningColor = "#CCA700"
             lVSCodeTheme.InfoColor = "#75BEFF"
@@ -332,6 +333,7 @@ Namespace Models
             lLightTheme.BevelLightColor = "#F0F0F0"
             lLightTheme.BevelDarkColor = "#B2B2B2"
             lLightTheme.DisabledForegroundColor = "#737373"
+            lLightTheme.AccentColor = "#0078D4" ' Fluent/VS blue
             lLightTheme.ErrorColor = "#D32F2F"
             lLightTheme.WarningColor = "#F57C00"
             lLightTheme.InfoColor = "#1976D2"

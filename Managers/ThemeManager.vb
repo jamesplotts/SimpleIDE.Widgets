@@ -352,6 +352,7 @@ Namespace Managers
             lMonokai.BevelLightColor = "#74746E"
             lMonokai.BevelDarkColor = "#000000"
             lMonokai.DisabledForegroundColor = "#9A9A94"
+            lMonokai.AccentColor = "#F92672" ' Monokai's signature hot pink/magenta
             lMonokai.ErrorColor = "#F92672"
             lMonokai.WarningColor = "#FD971F"
             lMonokai.InfoColor = "#75715E"
@@ -380,6 +381,7 @@ Namespace Managers
             lSolarizedDark.BevelLightColor = "#4C7882"
             lSolarizedDark.BevelDarkColor = "#000000"
             lSolarizedDark.DisabledForegroundColor = "#48656B"
+            lSolarizedDark.AccentColor = "#268BD2" ' Solarized's canonical "blue" accent
             lSolarizedDark.ErrorColor = "#DC322F"
             lSolarizedDark.WarningColor = "#CB4B16"
             lSolarizedDark.InfoColor = "#268BD2"
@@ -408,6 +410,7 @@ Namespace Managers
             lSolarizedLight.BevelLightColor = "#FFFFFF"
             lSolarizedLight.BevelDarkColor = "#B0AA96"
             lSolarizedLight.DisabledForegroundColor = "#A9B2AE"
+            lSolarizedLight.AccentColor = "#268BD2" ' Same Solarized "blue" - designed to read on both base03/base3
             lSolarizedLight.ErrorColor = "#DC322F"
             lSolarizedLight.WarningColor = "#CB4B16"
             lSolarizedLight.InfoColor = "#268BD2"
@@ -436,6 +439,7 @@ Namespace Managers
             lDracula.BevelLightColor = "#747682"
             lDracula.BevelDarkColor = "#000000"
             lDracula.DisabledForegroundColor = "#9A9B9D"
+            lDracula.AccentColor = "#BD93F9" ' Dracula's signature purple
             lDracula.ErrorColor = "#FF5555"
             lDracula.WarningColor = "#FFB86C"
             lDracula.InfoColor = "#6272A4"
@@ -464,6 +468,7 @@ Namespace Managers
             lGitHubDark.BevelLightColor = "#5A5E64"
             lGitHubDark.BevelDarkColor = "#000000"
             lGitHubDark.DisabledForegroundColor = "#747B82"
+            lGitHubDark.AccentColor = "#58A6FF" ' GitHub's actual dark-mode link/accent blue
             lGitHubDark.ErrorColor = "#DC322F"
             lGitHubDark.WarningColor = "#CB4B16"
             lGitHubDark.InfoColor = "#268BD2"
@@ -492,6 +497,7 @@ Namespace Managers
             lOneDark.BevelLightColor = "#747880"
             lOneDark.BevelDarkColor = "#000000"
             lOneDark.DisabledForegroundColor = "#707680"
+            lOneDark.AccentColor = "#61AFEF" ' Atom One Dark's signature "function blue"
             lOneDark.ErrorColor = "#DC322F"
             lOneDark.WarningColor = "#CB4B16"
             lOneDark.InfoColor = "#268BD2"
