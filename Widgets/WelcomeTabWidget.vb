@@ -7,6 +7,7 @@ Imports Cairo
 Imports System
 Imports System.Collections.Generic
 Imports SimpleIDE.Managers
+Imports SimpleIDE.Models
 
 Namespace Widgets
 
@@ -109,7 +110,23 @@ Namespace Widgets
                 Return pThemeManager
             End Get
             Set(value As ThemeManager)
+                ' Subscribe to ThemeChanged directly (same event/pattern CustomDrawButton
+                ' etc. already use) so the welcome tab's own Cairo-drawn chrome (background,
+                ' headings, links, separator - pThemeColors) redraws the instant the theme
+                ' changes, instead of only ever being refreshed by MainWindow explicitly
+                ' calling ApplyWelcomeTheme/RefreshWelcomeTab - which in practice never fired
+                ' on a live theme switch, since it was gated behind
+                ' SettingsManager.SettingsChanged("EditorTheme"/"EditorForeground"/
+                ' "EditorBackground"), setting names nothing actually raises for a theme
+                ' change (the real one is "CurrentTheme", and - separately - the generic
+                ' SetSetting() that persists it never even raises SettingsChanged at all).
+                If pThemeManager IsNot Nothing Then
+                    RemoveHandler pThemeManager.ThemeChanged, AddressOf OnThemeManagerThemeChanged
+                End If
                 pThemeManager = value
+                If pThemeManager IsNot Nothing Then
+                    AddHandler pThemeManager.ThemeChanged, AddressOf OnThemeManagerThemeChanged
+                End If
                 pNewProjectButton.ThemeManager = value
                 pOpenProjectButton.ThemeManager = value
                 pOpenFileButton.ThemeManager = value
@@ -230,6 +247,15 @@ Namespace Widgets
             QueueDraw()
         End Sub
         
+        ''' <summary>
+        ''' Fired by ThemeManager.ThemeChanged whenever the active theme switches - applies
+        ''' immediately rather than waiting for whatever next redraws the tab
+        ''' </summary>
+        Private Sub OnThemeManagerThemeChanged(vTheme As EditorTheme)
+            If vTheme Is Nothing Then Return
+            UpdateTheme(vTheme.IsDarkTheme)
+        End Sub
+
         ''' <summary>
         ''' Updates the theme colors for the welcome tab
         ''' </summary>
