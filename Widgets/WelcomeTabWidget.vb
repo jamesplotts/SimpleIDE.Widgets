@@ -741,9 +741,13 @@ Namespace Widgets
                     ' Scale to a nice size for the welcome tab (128x128)
                     pPenguinPixbuf = pPenguinPixbuf.ScaleSimple(128, 128, Gdk.InterpType.Bilinear)
                     lIconStream.Close()
+                    #If DEBUG Then
                     Console.WriteLine("WelcomeTabWidget: Penguin image loaded successfully")
+                    #End If
                 Else
+                    #If DEBUG Then
                     Console.WriteLine("WelcomeTabWidget: Could not find icon.png in resources")
+                    #End If
                 End If
             Catch ex As Exception
                 Console.WriteLine($"WelcomeTabWidget.LoadPenguinImage error: {ex.Message}")

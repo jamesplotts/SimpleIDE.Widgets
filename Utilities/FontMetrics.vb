@@ -165,7 +165,9 @@ Namespace Utilities
                 pAscent = CInt(Math.Ceiling(pCharHeight * 0.75))
                 pDescent = pCharHeight - pAscent
                 
+                #If DEBUG Then
                 Console.WriteLine($"FontMetrics defaults set: CharWidth={pCharWidth}, CharHeight={pCharHeight}, Ascent={pAscent}, Descent={pDescent}")
+                #End If
                 
             Catch ex As Exception
                 Console.WriteLine($"SetDefaultsFromFontDescription error: {ex.Message}")
@@ -180,7 +182,9 @@ Namespace Utilities
         Private Sub CalculateMetrics(vContext As Cairo.Context)
             Try
                 If vContext Is Nothing Then
+                    #If DEBUG Then
                     Console.WriteLine("CalculateMetrics: Cairo context is Nothing, using defaults")
+                    #End If
                     SetDefaults()
                     Return
                 End If
@@ -191,7 +195,9 @@ Namespace Utilities
                     lLayout = Pango.CairoHelper.CreateLayout(vContext)
                     
                     If lLayout Is Nothing Then
+                        #If DEBUG Then
                         Console.WriteLine("CalculateMetrics: Could not create Pango layout, using defaults")
+                        #End If
                         SetDefaults()
                         Return
                     End If
@@ -227,7 +233,9 @@ Namespace Utilities
                                         
                                         ' CRITICAL FIX: Ensure Ascent is never 0
                                         If pAscent <= 0 Then
+                                            #If DEBUG Then
                                             Console.WriteLine($"FontMetrics: Pango returned Ascent={pAscent}, using approximation")
+                                            #End If
                                             pAscent = CInt(Math.Ceiling(pCharHeight * 0.75))
                                             pDescent = pCharHeight - pAscent
                                         End If
@@ -235,28 +243,38 @@ Namespace Utilities
                                         ' Ensure height is consistent
                                         pCharHeight = Math.Max(pCharHeight, pAscent + pDescent)
                                         
+                                        #If DEBUG Then
                                         Console.WriteLine($"FontMetrics calculated: CharWidth={pCharWidth}, CharHeight={pCharHeight}, Ascent={pAscent}, Descent={pDescent}")
+                                        #End If
                                     Else
                                         ' FontMetrics is null, use approximations
+                                        #If DEBUG Then
                                         Console.WriteLine("FontMetrics: GetMetrics returned Nothing, using approximations")
+                                        #End If
                                         pAscent = CInt(Math.Ceiling(pCharHeight * 0.75))
                                         pDescent = pCharHeight - pAscent
                                     End If
                                 Else
                                     ' Font couldn't be loaded, use approximations
+                                    #If DEBUG Then
                                     Console.WriteLine("FontMetrics: LoadFont returned Nothing, using approximations")
+                                    #End If
                                     pAscent = CInt(Math.Ceiling(pCharHeight * 0.75))
                                     pDescent = pCharHeight - pAscent
                                 End If
                             Else
                                 ' FontMap is null, use approximations
+                                #If DEBUG Then
                                 Console.WriteLine("FontMetrics: FontMap is Nothing, using approximations")
+                                #End If
                                 pAscent = CInt(Math.Ceiling(pCharHeight * 0.75))
                                 pDescent = pCharHeight - pAscent
                             End If
                         Else
                             ' Pango context creation failed, use approximations
+                            #If DEBUG Then
                             Console.WriteLine("FontMetrics: CreateContext returned Nothing, using approximations")
+                            #End If
                             pAscent = CInt(Math.Ceiling(pCharHeight * 0.75))
                             pDescent = pCharHeight - pAscent
                         End If
@@ -361,7 +379,9 @@ Namespace Utilities
                 If pFontDescription IsNot Nothing Then
                     CalculateMetrics(vContext)
                 Else
+                    #If DEBUG Then
                     Console.WriteLine("RecalculateMetrics: No font Description set")
+                    #End If
                     SetDefaults()
                 End If
                 

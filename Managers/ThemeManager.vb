@@ -127,7 +127,9 @@ Namespace Managers
                 End If
 
                 If Not pAvailableThemes.ContainsKey(vThemeName) Then
+                    #If DEBUG Then
                     Console.WriteLine($"Theme '{vThemeName}' not found, using default")
+                    #End If
                     vThemeName = "Default Dark"
                 End If
 
@@ -185,7 +187,9 @@ Namespace Managers
                     CUInt(StyleProviderPriority.User)  ' Use USER priority (800) for highest precedence
                 )
                 
+                #If DEBUG Then
                 Console.WriteLine($"ThemeManager.ApplyCurrentTheme: Applied theme: {pCurrentTheme.Name}")
+                #End If
                 
                 ' Force GTK to refresh all widgets
                 ForceGlobalRefresh()
@@ -345,7 +349,9 @@ Namespace Managers
                     pAvailableThemes(lTheme.Name) = lTheme
                 Next
                 
+                #If DEBUG Then
                 Console.WriteLine($"loaded {pAvailableThemes.Count} built-in themes")
+                #End If
                 
             Catch ex As Exception
                 Console.WriteLine($"LoadBuiltInThemes error: {ex.Message}")
@@ -436,7 +442,9 @@ Namespace Managers
             Try
                 Dim lWindow As Window = Window.ListToplevels().FirstOrDefault(Function(w) w.Visible)
                 If lWindow Is Nothing Then
+                    #If DEBUG Then
                     Console.WriteLine("BuildSystemColorsTheme: no realized window yet, skipping sample")
+                    #End If
                     Return Nothing
                 End If
 
@@ -511,7 +519,9 @@ Namespace Managers
                 ' Restore whatever theme was actually active before returning
                 ApplyCurrentTheme()
 
+                #If DEBUG Then
                 Console.WriteLine($"BuildSystemColorsTheme: sampled Background={lBackgroundHex} Foreground={lForegroundHex} Selection={lSelectionHex} IsDark={lIsDark}")
+                #End If
                 Return lTheme
 
             Catch ex As Exception
@@ -805,7 +815,9 @@ Namespace Managers
                     Next
                 End If
                 
+                #If DEBUG Then
                 Console.WriteLine($"loaded {pCustomThemes.Count} custom themes")
+                #End If
                 
             Catch ex As Exception
                 Console.WriteLine($"LoadCustomThemes error: {ex.Message}")
@@ -1078,7 +1090,9 @@ Namespace Managers
                 End If
                 
                 ' Last resort: create a basic default theme
+                #If DEBUG Then
                 Console.WriteLine("GetEditorTheme: No themes available, creating default")
+                #End If
                 Dim lDefaultTheme As New EditorTheme("Default Dark")
                 pAvailableThemes("Default Dark") = lDefaultTheme
                 pCurrentTheme = lDefaultTheme

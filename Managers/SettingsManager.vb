@@ -53,7 +53,9 @@ Namespace Managers
             Try
                 ' Load settings from ApplicationSettings - this initializes the settings system
                 ' The settings will be automatically loaded from the user's settings file
+                #If DEBUG Then
                 Console.WriteLine("SettingsManager: Initializing settings system")
+                #End If
                 
                 ' Validate and fix any invalid settings
                 ValidateSettings()
@@ -101,7 +103,9 @@ Namespace Managers
                 SaveRecentFiles()
                 SaveRecentProjects()
                 
+                #If DEBUG Then
                 Console.WriteLine("Settings saved successfully")
+                #End If
                 
             Catch ex As Exception
                 Console.WriteLine($"SaveSettings error: {ex.Message}")
@@ -130,7 +134,9 @@ Namespace Managers
                 LoadRecentFiles()
                 LoadRecentProjects()
                 
+                #If DEBUG Then
                 Console.WriteLine("Settings reset to defaults")
+                #End If
                 
             Catch ex As Exception
                 Console.WriteLine($"ResetToDefaults error: {ex.Message}")
@@ -1153,7 +1159,9 @@ End Property
                     DateTime.TryParse(lLastIncrementString, pLastVersionIncrement)
                 End If
                 
+                #If DEBUG Then
                 Console.WriteLine($"Loaded version settings: AutoIncrement={pAutoIncrementVersion}")
+                #End If
                 
             Catch ex As Exception
                 Console.WriteLine($"LoadVersionSettings error: {ex.Message}")
@@ -1178,7 +1186,9 @@ End Property
                     ' Save the updated list
                     SaveRecentFiles()
                     RaiseEvent RecentFilesChanged()
+                    #If DEBUG Then
                     Console.WriteLine($"RemoveRecentFile: Removed {vFilePath} from recent files")
+                    #End If
                 End If
                 
             Catch ex As Exception

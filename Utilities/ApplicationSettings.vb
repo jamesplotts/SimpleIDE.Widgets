@@ -643,7 +643,9 @@ End Property
                 End If
                 
                 pIsLoaded = True
+                #If DEBUG Then
                 Console.WriteLine($"Settings loaded from: {pSettingsFilePath}")
+                #End If
                 
             Catch ex As Exception
                 Console.WriteLine($"LoadSettings error: {ex.Message}")
@@ -659,7 +661,9 @@ End Property
                 })
                 
                 File.WriteAllText(pSettingsFilePath, lJsonContent)
+                #If DEBUG Then
                 Console.WriteLine($"Settings saved to: {pSettingsFilePath}")
+                #End If
                 
             Catch ex As Exception
                 Console.WriteLine($"SaveSettings error: {ex.Message}")

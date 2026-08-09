@@ -99,13 +99,17 @@ Namespace Models
             Try
                 ' Validate theme parameter
                 If vTheme Is Nothing Then
+                    #If DEBUG Then
                     Console.WriteLine("UpdateFromTheme: Theme is Nothing")
+                    #End If
                     Return
                 End If
                 
                 ' Validate theme has syntax colors
                 If vTheme.SyntaxColors Is Nothing Then
+                    #If DEBUG Then
                     Console.WriteLine("UpdateFromTheme: Theme.SyntaxColors is Nothing")
+                    #End If
                     Return
                 End If
                 
@@ -116,7 +120,9 @@ Namespace Models
                         ' Update the color using the property setter which will trigger events
                         Me.SyntaxColor(kvp.Key) = kvp.Value
                         
+                        #If DEBUG Then
                         Console.WriteLine($"UpdateFromTheme: Updated {kvp.Key} to {kvp.Value}")
+                        #End If
                     End If
                 Next
                 
