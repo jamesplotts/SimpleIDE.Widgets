@@ -534,7 +534,22 @@ End Property
                 RaiseEvent SettingsChanged("TabWidth", lOldValue, Value)
             End Set
         End Property
-        
+
+        ''' <summary>
+        ''' Gets or sets the maximum number of undo actions kept per editor
+        ''' </summary>
+        ''' <value>Number of undo actions to retain (100-100000)</value>
+        Public Property UndoHistorySize As Integer
+            Get
+                Return ApplicationSettings.Instance.UndoHistorySize
+            End Get
+            Set(Value As Integer)
+                Dim lOldValue As Integer = ApplicationSettings.Instance.UndoHistorySize
+                ApplicationSettings.Instance.UndoHistorySize = Math.Max(100, Math.Min(100000, Value))
+                RaiseEvent SettingsChanged("UndoHistorySize", lOldValue, Value)
+            End Set
+        End Property
+
         Public Property ShowLineNumbers As Boolean
             Get
                 Return ApplicationSettings.Instance.ShowLineNumbers

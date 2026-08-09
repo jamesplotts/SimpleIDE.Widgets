@@ -233,7 +233,24 @@ End Property
                 SetValue("TabWidth", Value)
             End Set
         End Property
-        
+
+        ''' <summary>
+        ''' Gets or sets the maximum number of undo actions kept per editor
+        ''' </summary>
+        ''' <remarks>
+        ''' Every keystroke - not just every word/line - records its own undo action, so a
+        ''' single typed declaration can burn 30-40 slots; 10000 comfortably covers real
+        ''' editing sessions while still bounding memory (see UndoRedoManager.pMaxStackSize)
+        ''' </remarks>
+        Public Property UndoHistorySize As Integer
+            Get
+                Return GetValue("UndoHistorySize", 10000)
+            End Get
+            Set(Value As Integer)
+                SetValue("UndoHistorySize", Value)
+            End Set
+        End Property
+
         Public Property UseTabs As Boolean
             Get
                 Return GetValue("UseTabs", False)
