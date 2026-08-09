@@ -189,7 +189,10 @@ Namespace Models
             SyntaxColors(SyntaxColorSet.Tags.eOperator) = "#D4D4D4"
             SyntaxColors(SyntaxColorSet.Tags.ePreprocessor) = "#9B9B9B"
             SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#FFFFFF"
-            SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#ADD6FF"
+            ' Selection Text Color - the foreground drawn for selected characters (see
+            ' CustomDrawingEditor.Drawing.vb) - set to the theme's own background so selected
+            ' text reads as background-on-highlight instead of keeping its normal syntax color
+            SyntaxColors(SyntaxColorSet.Tags.eSelection) = BackgroundColor
         End Sub
         
         ' Apply theme to SyntaxColorSet
@@ -313,7 +316,7 @@ Namespace Models
             lVSCodeTheme.SyntaxColors(SyntaxColorSet.Tags.eComment) = "#6A9955"
             lVSCodeTheme.SyntaxColors(SyntaxColorSet.Tags.eNumber) = "#B5CEA8"
             lVSCodeTheme.SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#D4D4D4"
-            lVSCodeTheme.SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#ADD6FF"
+            lVSCodeTheme.SyntaxColors(SyntaxColorSet.Tags.eSelection) = lVSCodeTheme.BackgroundColor
             lThemes.Add(lVSCodeTheme)
             
             ' Light theme
@@ -344,7 +347,7 @@ Namespace Models
             lLightTheme.SyntaxColors(SyntaxColorSet.Tags.eComment) = "#008000"
             lLightTheme.SyntaxColors(SyntaxColorSet.Tags.eNumber) = "#098658"
             lLightTheme.SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#000000"
-            lLightTheme.SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#ADD6FF"
+            lLightTheme.SyntaxColors(SyntaxColorSet.Tags.eSelection) = lLightTheme.BackgroundColor
             lThemes.Add(lLightTheme)
             
             Return lThemes

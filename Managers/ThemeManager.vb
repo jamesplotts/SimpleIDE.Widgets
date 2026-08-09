@@ -619,7 +619,7 @@ Namespace Managers
             lMonokai.SyntaxColors(SyntaxColorSet.Tags.eComment) = "#75715E"
             lMonokai.SyntaxColors(SyntaxColorSet.Tags.eNumber) = "#AE81FF"
             lMonokai.SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#F8F8F2"
-            lMonokai.SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#49483E"
+            lMonokai.SyntaxColors(SyntaxColorSet.Tags.eSelection) = lMonokai.BackgroundColor
             lThemes.Add(lMonokai)
             
             ' Solarized Dark theme
@@ -648,7 +648,7 @@ Namespace Managers
             lSolarizedDark.SyntaxColors(SyntaxColorSet.Tags.eComment) = "#586E75"
             lSolarizedDark.SyntaxColors(SyntaxColorSet.Tags.eNumber) = "#6C71C4"
             lSolarizedDark.SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#839496"
-            lSolarizedDark.SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#073642"
+            lSolarizedDark.SyntaxColors(SyntaxColorSet.Tags.eSelection) = lSolarizedDark.BackgroundColor
             lThemes.Add(lSolarizedDark)
             
             ' Solarized Light theme
@@ -677,7 +677,7 @@ Namespace Managers
             lSolarizedLight.SyntaxColors(SyntaxColorSet.Tags.eComment) = "#93A1A1"
             lSolarizedLight.SyntaxColors(SyntaxColorSet.Tags.eNumber) = "#6C71C4"
             lSolarizedLight.SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#657B83"
-            lSolarizedLight.SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#EEE8D5"
+            lSolarizedLight.SyntaxColors(SyntaxColorSet.Tags.eSelection) = lSolarizedLight.BackgroundColor
             lThemes.Add(lSolarizedLight)
             
             ' Dracula theme
@@ -706,7 +706,7 @@ Namespace Managers
             lDracula.SyntaxColors(SyntaxColorSet.Tags.eComment) = "#6272A4"
             lDracula.SyntaxColors(SyntaxColorSet.Tags.eNumber) = "#BD93F9"
             lDracula.SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#F8F8F2"
-            lDracula.SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#44475A"
+            lDracula.SyntaxColors(SyntaxColorSet.Tags.eSelection) = lDracula.BackgroundColor
             lThemes.Add(lDracula)
             
             ' GitHub Dark theme
@@ -735,7 +735,7 @@ Namespace Managers
             lGitHubDark.SyntaxColors(SyntaxColorSet.Tags.eComment) = "#8B949E"
             lGitHubDark.SyntaxColors(SyntaxColorSet.Tags.eNumber) = "#79C0FF"
             lGitHubDark.SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#C9D1D9"
-            lGitHubDark.SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#1F6FEB"
+            lGitHubDark.SyntaxColors(SyntaxColorSet.Tags.eSelection) = lGitHubDark.BackgroundColor
             lThemes.Add(lGitHubDark)
             
             ' One Dark theme
@@ -764,7 +764,7 @@ Namespace Managers
             lOneDark.SyntaxColors(SyntaxColorSet.Tags.eComment) = "#5C6370"
             lOneDark.SyntaxColors(SyntaxColorSet.Tags.eNumber) = "#D19A66"
             lOneDark.SyntaxColors(SyntaxColorSet.Tags.eIdentifier) = "#ABB2BF"
-            lOneDark.SyntaxColors(SyntaxColorSet.Tags.eSelection) = "#3E4451"
+            lOneDark.SyntaxColors(SyntaxColorSet.Tags.eSelection) = lOneDark.BackgroundColor
             lThemes.Add(lOneDark)
             
             Return lThemes
