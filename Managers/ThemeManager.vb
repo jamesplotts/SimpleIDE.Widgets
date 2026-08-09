@@ -3,39 +3,62 @@ Imports Gtk
 Imports System
 Imports System.Collections.Generic
 Imports System.IO
+Imports System.Linq
 Imports System.Reflection
 Imports System.Text.Json
 Imports System.Text.Json.Serialization
 Imports SimpleIDE.Models
 Imports SimpleIDE.Managers
+Imports SimpleIDE.Utilities
 
 Namespace Managers
-    
+
     Public Class ThemeManager
-        
+
+        ''' <summary>
+        ''' Name of the pseudo-theme that mirrors the desktop/GTK theme's actual background,
+        ''' text, and selection colors rather than a fixed hand-picked palette
+        ''' </summary>
+        ''' <remarks>
+        ''' Not a real built-in theme entry from GetAllBuiltInThemes - registered directly into
+        ''' pAvailableThemes (see RegisterSystemColorsPlaceholder/RefreshSystemColorsTheme)
+        ''' and deliberately never added to pCustomThemes, so DeleteTheme's "only custom themes
+        ''' can be deleted" check protects it the same way it protects real built-ins
+        ''' </remarks>
+        Public Const SystemColorsThemeName As String = "System Colors"
+
         ' Private fields
         Private pSettingsManager As SettingsManager
         Private pCurrentTheme As EditorTheme
         Private pAvailableThemes As Dictionary(Of String, EditorTheme)
         Private pCssProvider As CssProvider
         Private pCustomThemes As List(Of EditorTheme)
-        
+
         ' Events
         Public Event ThemeChanged(vTheme As EditorTheme)
         Public Event ThemeApplied(vThemeName As String)
         Public Event ThemeListChanged()
-        
+
         ' Constructor
         Public Sub New(vSettingsManager As SettingsManager)
             pSettingsManager = vSettingsManager
             pAvailableThemes = New Dictionary(Of String, EditorTheme)
             pCustomThemes = New List(Of EditorTheme)
             pCssProvider = New CssProvider()
-            
+
             ' Initialize themes
             LoadBuiltInThemes()
             LoadCustomThemes()
-            
+
+            ' Register a cheap placeholder for "System Colors" immediately (just Default
+            ' Dark/Light cloned based on the GTK dark-mode setting) so the theme exists and is
+            ' selectable right away, including if it's the persisted CurrentTheme being applied
+            ' by SetTheme below. Sampling real GTK widget colors requires a realized window,
+            ' which doesn't exist yet this early in startup - see RefreshSystemColorsTheme's
+            ' remarks. MainWindow calls RefreshSystemColorsTheme once the window is realized to
+            ' replace this placeholder with the real sampled colors.
+            RegisterSystemColorsPlaceholder()
+
             ' Load current theme from settings
             Dim lThemeName As String = pSettingsManager.GetSetting("CurrentTheme", "Default Dark")
             SetTheme(lThemeName)
@@ -96,11 +119,18 @@ Namespace Managers
         ' Set current theme
         Public Sub SetTheme(vThemeName As String)
             Try
+                ' Re-sample the live GTK/desktop colors on every switch TO System Colors, not
+                ' just once at startup, so it reflects the current OS theme even if that theme
+                ' changed since SimpleIDE was launched
+                If vThemeName = SystemColorsThemeName Then
+                    RefreshSystemColorsTheme()
+                End If
+
                 If Not pAvailableThemes.ContainsKey(vThemeName) Then
                     Console.WriteLine($"Theme '{vThemeName}' not found, using default")
                     vThemeName = "Default Dark"
                 End If
-                
+
                 pCurrentTheme = pAvailableThemes(vThemeName)
                 
                 ' Save to settings
@@ -327,7 +357,233 @@ Namespace Managers
                 End If
             End Try
         End Sub
-        
+
+        ' ===== System Colors (follows the desktop/GTK theme) =====
+
+        ''' <summary>
+        ''' Registers a cheap, immediately-available "System Colors" entry (just Default Dark
+        ''' or Light cloned, based on the GTK dark-mode setting) so the theme exists and is
+        ''' selectable from construction onward
+        ''' </summary>
+        Private Sub RegisterSystemColorsPlaceholder()
+            Try
+                Dim lIsDark As Boolean = Gtk.Settings.Default IsNot Nothing AndAlso Gtk.Settings.Default.ApplicationPreferDarkTheme
+                Dim lBaseName As String = If(lIsDark, "Default Dark", "Light")
+                Dim lBase As EditorTheme = If(pAvailableThemes.ContainsKey(lBaseName), pAvailableThemes(lBaseName), New EditorTheme("Default Dark"))
+
+                Dim lPlaceholder As EditorTheme = lBase.Clone()
+                lPlaceholder.Name = SystemColorsThemeName
+                lPlaceholder.Description = "Follows the desktop/GTK theme's actual background, text, and selection colors"
+                pAvailableThemes(SystemColorsThemeName) = lPlaceholder
+
+            Catch ex As Exception
+                Console.WriteLine($"RegisterSystemColorsPlaceholder error: {ex.Message}")
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Re-samples "System Colors" from the live GTK/desktop theme and, if it's the
+        ''' currently active theme, re-applies it immediately
+        ''' </summary>
+        ''' <remarks>
+        ''' Called by SetTheme every time the user switches TO System Colors (so it reflects
+        ''' whatever the OS theme currently is, not just whatever it was at app startup) and
+        ''' once by MainWindow after the main window is realized (replacing
+        ''' RegisterSystemColorsPlaceholder's construction-time placeholder with real sampled
+        ''' colors, since sampling requires a realized widget - see BuildSystemColorsTheme).
+        ''' There is no live push-based tracking of OS theme changes while SimpleIDE is
+        ''' running - GTK3 has no reliable cross-desktop-environment signal for that - so a
+        ''' theme switched at the OS level mid-session won't be picked up until the user
+        ''' reselects System Colors (or restarts SimpleIDE).
+        ''' </remarks>
+        Public Sub RefreshSystemColorsTheme()
+            Try
+                Dim lTheme As EditorTheme = BuildSystemColorsTheme()
+                If lTheme Is Nothing Then Return
+
+                pAvailableThemes(SystemColorsThemeName) = lTheme
+
+                If pCurrentTheme IsNot Nothing AndAlso pCurrentTheme.Name = SystemColorsThemeName Then
+                    pCurrentTheme = lTheme
+                    ApplyCurrentTheme()
+                    RaiseEvent ThemeChanged(pCurrentTheme)
+                End If
+
+            Catch ex As Exception
+                Console.WriteLine($"RefreshSystemColorsTheme error: {ex.Message}")
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Builds the "System Colors" EditorTheme by sampling a live, realized top-level
+        ''' window's actual GtkStyleContext - the real background/text/selection colors the
+        ''' active desktop GTK theme is currently rendering everything else with
+        ''' </summary>
+        ''' <remarks>
+        ''' SimpleIDE's own theme CSS is applied screen-wide at StyleProviderPriority.User (the
+        ''' highest priority - see ApplyCurrentTheme), which would make any StyleContext query
+        ''' just read back SimpleIDE's OWN theme instead of the underlying desktop one. This
+        ''' temporarily removes that CSS override, forces an immediate style revalidation
+        ''' (ResetStyle/RefreshWidgetRecursive - the same technique ForceGlobalRefresh already
+        ''' uses), samples the now-unmasked real colors, then restores whatever theme was
+        ''' active via ApplyCurrentTheme. GtkStyleContext resolves its queried properties
+        ''' synchronously on access (not on the next paint), so this never actually paints the
+        ''' unmasked desktop colors to screen - no visible flash.
+        ''' </remarks>
+        ''' <returns>The sampled EditorTheme, or Nothing if no realized window is available yet
+        ''' (e.g. called before the main window has been shown)</returns>
+        Private Function BuildSystemColorsTheme() As EditorTheme
+            Try
+                Dim lWindow As Window = Window.ListToplevels().FirstOrDefault(Function(w) w.Visible)
+                If lWindow Is Nothing Then
+                    Console.WriteLine("BuildSystemColorsTheme: no realized window yet, skipping sample")
+                    Return Nothing
+                End If
+
+                Dim lIsDark As Boolean = Gtk.Settings.Default IsNot Nothing AndAlso Gtk.Settings.Default.ApplicationPreferDarkTheme
+
+                ' Unmask the real desktop theme just long enough to sample it
+                RemoveAllThemeProviders()
+                lWindow.ResetStyle()
+                RefreshWidgetRecursive(lWindow)
+
+                Dim lStyleContext As StyleContext = lWindow.StyleContext
+                Dim lBackgroundHex As String = CssHelper.RgbaToHex(lStyleContext.GetBackgroundColor(StateFlags.Normal))
+                Dim lForegroundHex As String = CssHelper.RgbaToHex(lStyleContext.GetColor(StateFlags.Normal))
+
+                ' GetBackgroundColor(StateFlags.Selected) on a bare Window's own StyleContext
+                ' just returns the same value as Normal - a plain Window has no ":selected" CSS
+                ' rule of its own (that only applies to specific selectable widgets like a
+                ' GtkEntry's text selection or a GtkTreeView row). LookupColor against the
+                ' theme's standard named "theme_selected_bg_color" (defined by Adwaita and most
+                ' other GTK3 themes) is the correct way to get the theme's actual accent/
+                ' selection color regardless of widget type. Falls back to a lightened/darkened
+                ' variant of the background if the active theme doesn't define that name.
+                Dim lSelectedRgba As New Gdk.RGBA()
+                Dim lSelectionHex As String
+                If lStyleContext.LookupColor("theme_selected_bg_color", lSelectedRgba) Then
+                    lSelectionHex = CssHelper.RgbaToHex(lSelectedRgba)
+                Else
+                    lSelectionHex = If(lIsDark, LightenHex(lBackgroundHex, 0.25), DarkenHex(lBackgroundHex, 0.1))
+                End If
+
+                ' Base the syntax-highlighting palette and status colors on whichever built-in
+                ' theme matches light/dark - there's no OS setting for "keyword color" or
+                ' "string color" to sample, so this is the honest, readable fallback rather
+                ' than guessing colors that might not contrast against the sampled background
+                Dim lPaletteBaseName As String = If(lIsDark, "Default Dark", "Light")
+                Dim lPaletteBase As EditorTheme = If(pAvailableThemes.ContainsKey(lPaletteBaseName), pAvailableThemes(lPaletteBaseName), New EditorTheme("Default Dark"))
+
+                Dim lTheme As New EditorTheme(SystemColorsThemeName)
+                lTheme.Description = "Follows the desktop/GTK theme's actual background, text, and selection colors"
+                lTheme.IsDarkTheme = lIsDark
+                lTheme.BackgroundColor = lBackgroundHex
+                lTheme.ForegroundColor = lForegroundHex
+                lTheme.SelectionColor = lSelectionHex
+                lTheme.CurrentLineColor = If(lIsDark, LightenHex(lBackgroundHex, 0.06), DarkenHex(lBackgroundHex, 0.04))
+                lTheme.LineNumberColor = BlendHex(lForegroundHex, lBackgroundHex, 0.4)
+                lTheme.LineNumberBackgroundColor = lBackgroundHex
+                lTheme.CurrentLineNumberColor = lForegroundHex
+                lTheme.CursorColor = lForegroundHex
+                lTheme.EditorBackgroundColor = lBackgroundHex
+                lTheme.TabInactiveColor = If(lIsDark, LightenHex(lBackgroundHex, 0.04), DarkenHex(lBackgroundHex, 0.03))
+                lTheme.TabHoverColor = If(lIsDark, LightenHex(lBackgroundHex, 0.08), DarkenHex(lBackgroundHex, 0.06))
+                lTheme.AccentColor = lSelectionHex
+                lTheme.BevelLightColor = If(lIsDark, LightenHex(lBackgroundHex, 0.15), "#F0F0F0")
+                lTheme.BevelDarkColor = If(lIsDark, "#000000", DarkenHex(lBackgroundHex, 0.2))
+                lTheme.DisabledForegroundColor = "" ' auto-derived from Foreground/Background - see EditorTheme.DeriveDisabledForegroundColor
+                lTheme.ErrorColor = lPaletteBase.ErrorColor
+                lTheme.WarningColor = lPaletteBase.WarningColor
+                lTheme.InfoColor = lPaletteBase.InfoColor
+                lTheme.SuccessColor = lPaletteBase.SuccessColor
+                for each lKvp in lPaletteBase.SyntaxColors
+                    lTheme.SyntaxColors(lKvp.Key) = lKvp.Value
+                Next
+
+                ' Carry over whatever editor font is currently configured rather than resetting
+                ' to EditorTheme's own SetDefaults font - switching to System Colors shouldn't
+                ' silently change the user's chosen editor font
+                If pCurrentTheme IsNot Nothing Then
+                    lTheme.FontFamily = pCurrentTheme.FontFamily
+                    lTheme.FontSize = pCurrentTheme.FontSize
+                End If
+
+                ' Restore whatever theme was actually active before returning
+                ApplyCurrentTheme()
+
+                Console.WriteLine($"BuildSystemColorsTheme: sampled Background={lBackgroundHex} Foreground={lForegroundHex} Selection={lSelectionHex} IsDark={lIsDark}")
+                Return lTheme
+
+            Catch ex As Exception
+                Console.WriteLine($"BuildSystemColorsTheme error: {ex.Message}")
+                ' Best-effort attempt to restore the previous theme even on failure
+                Try
+                    ApplyCurrentTheme()
+                Catch
+                End Try
+                Return Nothing
+            End Try
+        End Function
+
+        ''' <summary>
+        ''' Lightens a hex color toward white by vAmount (0.0-1.0 per channel)
+        ''' </summary>
+        Private Shared Function LightenHex(vHexColor As String, vAmount As Double) As String
+            Try
+                Dim lColor As New Gdk.RGBA()
+                If Not lColor.Parse(vHexColor) Then Return vHexColor
+
+                Dim lR As Double = Math.Min(1.0, lColor.Red + vAmount)
+                Dim lG As Double = Math.Min(1.0, lColor.Green + vAmount)
+                Dim lB As Double = Math.Min(1.0, lColor.Blue + vAmount)
+
+                Return $"#{CInt(lR * 255):X2}{CInt(lG * 255):X2}{CInt(lB * 255):X2}"
+            Catch ex As Exception
+                Console.WriteLine($"LightenHex error: {ex.Message}")
+                Return vHexColor
+            End Try
+        End Function
+
+        ''' <summary>
+        ''' Darkens a hex color toward black by vAmount (0.0-1.0 per channel)
+        ''' </summary>
+        Private Shared Function DarkenHex(vHexColor As String, vAmount As Double) As String
+            Try
+                Dim lColor As New Gdk.RGBA()
+                If Not lColor.Parse(vHexColor) Then Return vHexColor
+
+                Dim lR As Double = Math.Max(0.0, lColor.Red - vAmount)
+                Dim lG As Double = Math.Max(0.0, lColor.Green - vAmount)
+                Dim lB As Double = Math.Max(0.0, lColor.Blue - vAmount)
+
+                Return $"#{CInt(lR * 255):X2}{CInt(lG * 255):X2}{CInt(lB * 255):X2}"
+            Catch ex As Exception
+                Console.WriteLine($"DarkenHex error: {ex.Message}")
+                Return vHexColor
+            End Try
+        End Function
+
+        ''' <summary>
+        ''' Blends two hex colors - vRatio of 0.0 returns vColor1, 1.0 returns vColor2
+        ''' </summary>
+        Private Shared Function BlendHex(vColor1 As String, vColor2 As String, vRatio As Double) As String
+            Try
+                Dim lC1 As New Gdk.RGBA()
+                Dim lC2 As New Gdk.RGBA()
+                If Not lC1.Parse(vColor1) OrElse Not lC2.Parse(vColor2) Then Return vColor1
+
+                Dim lR As Double = lC1.Red + (lC2.Red - lC1.Red) * vRatio
+                Dim lG As Double = lC1.Green + (lC2.Green - lC1.Green) * vRatio
+                Dim lB As Double = lC1.Blue + (lC2.Blue - lC1.Blue) * vRatio
+
+                Return $"#{CInt(lR * 255):X2}{CInt(lG * 255):X2}{CInt(lB * 255):X2}"
+            Catch ex As Exception
+                Console.WriteLine($"BlendHex error: {ex.Message}")
+                Return vColor1
+            End Try
+        End Function
+
+
         ' Get all built-in themes including popular ones
         Private Function GetAllBuiltInThemes() As List(Of EditorTheme)
             Dim lThemes As New List(Of EditorTheme)
