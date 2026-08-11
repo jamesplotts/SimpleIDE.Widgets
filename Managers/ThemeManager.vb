@@ -1199,6 +1199,61 @@ Namespace Managers
         ''' <summary>
         ''' Updates an existing custom theme with new values
         ''' </summary>
+        ''' <summary>
+        ''' Renames a custom theme in place, preserving all its color values
+        ''' </summary>
+        ''' <param name="vOldName">Current name of the theme to rename</param>
+        ''' <param name="vNewName">New name for the theme</param>
+        ''' <returns>True if renamed successfully, False if the theme isn't a custom theme, the new name is already taken, or the rename failed</returns>
+        ''' <remarks>
+        ''' Built-in themes (and the "System Colors" pseudo-theme) can never be renamed -
+        ''' only themes present in pCustomThemes qualify, the same check DeleteTheme uses
+        ''' </remarks>
+        Public Function RenameTheme(vOldName As String, vNewName As String) As Boolean
+            Try
+                If String.IsNullOrWhiteSpace(vNewName) OrElse vOldName = vNewName Then Return False
+
+                ' Cannot rename built-in themes
+                Dim lTheme As EditorTheme = pCustomThemes.FirstOrDefault(Function(t) t.Name = vOldName)
+                If lTheme Is Nothing Then Return False
+
+                ' Can't collide with any existing theme name (built-in or custom)
+                If pAvailableThemes.ContainsKey(vNewName) Then Return False
+
+                Dim lThemesDir As String = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "SimpleIDE", "Themes")
+
+                ' Rename on disk first - if this fails, nothing in memory has changed yet
+                Dim lOldFilePath As String = System.IO.Path.Combine(lThemesDir, $"{vOldName}.json")
+                Dim lNewFilePath As String = System.IO.Path.Combine(lThemesDir, $"{vNewName}.json")
+                lTheme.Name = vNewName
+                If Not SaveTheme(lTheme, lNewFilePath) Then
+                    lTheme.Name = vOldName
+                    Return False
+                End If
+                If File.Exists(lOldFilePath) Then
+                    File.Delete(lOldFilePath)
+                End If
+
+                ' Re-key the in-memory collections
+                pAvailableThemes.Remove(vOldName)
+                pAvailableThemes(vNewName) = lTheme
+
+                ' If the renamed theme was the active one, follow it under its new name
+                If pCurrentTheme IsNot Nothing AndAlso pCurrentTheme.Name = vOldName Then
+                    pSettingsManager.SetSetting("CurrentTheme", vNewName)
+                End If
+
+                RaiseEvent ThemeListChanged()
+                Return True
+
+            Catch ex As Exception
+                Console.WriteLine($"RenameTheme error: {ex.Message}")
+                Return False
+            End Try
+        End Function
+
         Public Sub UpdateCustomTheme(vThemeName As String, vUpdatedTheme As EditorTheme)
             Try
                 If pAvailableThemes.ContainsKey(vThemeName) Then
